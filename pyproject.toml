@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "campground_moving_to"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 streamlit = "^1.20.0"
 pandas = "^1.5.3"
 
