@@ -1,55 +1,115 @@
-import csv
+import pandas as pd
+import streamlit as st
 
 
 def main():
-    due_in_report = "C:\\Users\\Jason\\Desktop\\camping report\\Due In Report.csv"
-    due_out_report = "C:\\Users\\Jason\\Desktop\\camping report\\Due Out Report.csv"
+    st.set_page_config(page_title="Campground Moving To", page_icon="⛺")
+    st.title("⛺ Campground Moving To")
+    with st.container():
+        st.write("Upload the 'Due In Report.csv' and the 'Due Out Report.csv'.")
+        st.write("It will return a table with who is staying, and on what sites.")
 
-    who_is_staying = get_who_is_staying(due_in_report, due_out_report)
-    print(who_is_staying)
+    if "file_state" not in st.session_state:
+        st.session_state["file_state"] = False
 
+    def change_due_in_state():
+        st.session_state["file_state"] = True
 
-def get_who_is_staying(due_in: str, due_out: str) -> list[dict]:
-    due_in_name_header = "txtdetailssmallfont-Name"
-    due_in_site_header = "txtdetailssmallfont-unit_name"
-    due_out_name_header = "txtdetails-Customer"
-    due_out_site_header = "txtdetails-unit_name"
-    due_in_list = []
-    due_out_list = []
-    staying_list = []
+    with st.container():
+        file_upload_list = st.file_uploader(
+            label="Upload reports. Both can be uploaded at the same time.",
+            type=["csv"],
+            accept_multiple_files=True,
+            on_change=change_due_in_state,
+        )
 
-    with open(due_in, newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            due_in_list.append(
-                {
-                    "Name": row[due_in_name_header],
-                    "Site arriving": row[due_in_site_header],
-                }
-            )
-
-    with open(due_out, newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            due_out_list.append(
-                {
-                    "Name": row[due_out_name_header],
-                    "Site leaving": row[due_out_site_header],
-                }
-            )
-
-    for in_row in due_in_list:
-        for out_row in due_out_list:
-            if in_row["Name"] in out_row["Name"]:
-                staying_list.append(
-                    {
-                        "Name": in_row["Name"],
-                        "Site leaving": out_row["Site leaving"],
-                        "Site arriving": in_row["Site arriving"],
-                    }
+    if st.session_state["file_state"]:
+        if len(file_upload_list) == 1:
+            if file_upload_list[0].name == "Due In Report.csv":
+                st.error("⚠️ 'Due Out Report.csv' needs to be uploaded too.")
+            elif file_upload_list[0].name == "Due Out Report.csv":
+                st.error("⚠️ 'Due In Report.csv' needs to be uploaded too.")
+            else:
+                st.error(
+                    "⚠️ Please only upload 'Due In Report.csv' or 'Due Out Report.csv'."
                 )
+        elif len(file_upload_list) == 2:
+            if file_upload_list[0].name == file_upload_list[1].name:
+                st.error(
+                    "⚠️ Duplicate reports uploaded. Please upload 1 'Due In Report.csv' and 1 'Due Out Report.csv'"
+                )
+            for i in range(2):
+                if (
+                    file_upload_list[i].name == "Due In Report.csv"
+                    or file_upload_list[i].name == "Due Out Report.csv"
+                ):
+                    pass
+                else:
+                    st.error(
+                        "⚠️ Please only upload 'Due In Report.csv' or 'Due Out Report.csv'."
+                    )
+            if (
+                file_upload_list[0].name == "Due In Report.csv"
+                and file_upload_list[1].name == "Due Out Report.csv"
+            ):
+                st.success("Found the correct files!")
+                due_in_report = file_upload_list[0]
+                due_out_report = file_upload_list[1]
+                combined_df = get_who_is_staying(due_in_report, due_out_report)
+                with st.container():
+                    st.dataframe(data=combined_df, use_container_width=True)
 
-    return sorted(staying_list, key=lambda d: d["Site leaving"])
+            elif (
+                file_upload_list[0].name == "Due Out Report.csv"
+                and file_upload_list[1].name == "Due In Report.csv"
+            ):
+                st.success("Found the correct files!")
+                due_in_report = file_upload_list[1]
+                due_out_report = file_upload_list[0]
+                combined_df = get_who_is_staying(due_in_report, due_out_report)
+                with st.container():
+                    st.dataframe(data=combined_df, use_container_width=True)
+        elif len(file_upload_list) > 2:
+            st.error("⚠️ Too many files uploaded. Remove extras.")
+    else:
+        st.info("Please upload the Due In and Due Out Reports.")
+
+
+def get_due_in(due_in_csv):
+    due_in_df = pd.read_csv(
+        due_in_csv,
+        usecols=["txtdetailssmallfont-Name", "txtdetailssmallfont-unit_name"],
+    )
+    due_in_df.rename(
+        columns={
+            "txtdetailssmallfont-Name": "Name",
+            "txtdetailssmallfont-unit_name": "Site arriving",
+        },
+        inplace=True,
+    )
+    return due_in_df
+
+
+def get_due_out(due_out_csv):
+    due_out_df = pd.read_csv(
+        due_out_csv, usecols=["txtdetails-Customer", "txtdetails-unit_name"]
+    )
+    due_out_df.rename(
+        columns={"txtdetails-Customer": "Name", "txtdetails-unit_name": "Site leaving"},
+        inplace=True,
+    )
+    return due_out_df
+
+
+def get_who_is_staying(due_in, due_out):
+    due_in_df = get_due_in(due_in)
+    due_out_df = get_due_out(due_out)
+
+    return (
+        pd.merge(due_in_df, due_out_df, on=["Name"], how="inner")
+        .sort_values(by=["Site leaving"])
+        .set_index("Name")
+    )
 
 
 if __name__ == "__main__":
