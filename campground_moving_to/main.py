@@ -17,7 +17,7 @@ def main():
 
     with st.container():
         file_upload_list = st.file_uploader(
-            label="Upload reports. Both can be uploaded at the same time.",
+            label="Both can be uploaded at the same time by drag and drop, or clicking the box to open the file browser and selecting the files there.",
             type=["csv"],
             accept_multiple_files=True,
             on_change=change_due_in_state,
@@ -106,7 +106,7 @@ def get_who_is_staying(due_in, due_out):
     due_out_df = get_due_out(due_out)
 
     return (
-        pd.merge(due_in_df, due_out_df, on=["Name"], how="inner")
+        pd.merge(due_out_df, due_in_df, on=["Name"], how="inner")
         .sort_values(by=["Site leaving"])
         .set_index("Name")
     )
