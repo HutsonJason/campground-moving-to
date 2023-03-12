@@ -1,5 +1,7 @@
 import pandas as pd
+import pandas.core.frame
 import streamlit as st
+import streamlit.runtime.uploaded_file_manager
 
 
 def main():
@@ -13,6 +15,7 @@ def main():
         st.session_state["file_state"] = False
 
     def change_due_in_state():
+        """Changes streamlit file_state on change of file_uploader."""
         st.session_state["file_state"] = True
 
     with st.container():
@@ -75,7 +78,22 @@ def main():
         st.info("Please upload the Due In and Due Out Reports.")
 
 
-def get_due_in(due_in_csv):
+def get_due_in(
+    due_in_csv: streamlit.runtime.uploaded_file_manager.UploadedFile,
+) -> pandas.core.frame.DataFrame:
+    """Gets a pandas dataframe of Due In Report.
+
+    Takes the 'Due In Report.csv' that is retrieved as a streamlit file_uploader object
+    (streamlit.runtime.uploaded_file_manager.UploadedFile) and converts it into a pandas dataframe.
+    The dataframe is created using only the 'Name' column and 'Site arriving' column.
+    These are titled on the csv as 'txtdetailssmallfont-Name' and 'txtdetailssmallfont-unit_name'.
+
+    Args:
+        due_in_csv: The 'Due In Report' csv file retrieved as a streamlit file_uploader object.
+
+    Returns:
+        A pandas dataframe with only the 'Name' column and 'Site arriving' column.
+    """
     due_in_df = pd.read_csv(
         due_in_csv,
         usecols=["txtdetailssmallfont-Name", "txtdetailssmallfont-unit_name"],
@@ -90,7 +108,22 @@ def get_due_in(due_in_csv):
     return due_in_df
 
 
-def get_due_out(due_out_csv):
+def get_due_out(
+    due_out_csv: streamlit.runtime.uploaded_file_manager.UploadedFile,
+) -> pandas.core.frame.DataFrame:
+    """Gets a pandas dataframe of Due Out Report.
+
+    Takes the 'Due Out Report.csv' that is retrieved as a streamlit file_uploader object
+    (streamlit.runtime.uploaded_file_manager.UploadedFile) and converts it into a pandas dataframe.
+    The dataframe is created using only the 'Name' column and 'Site leaving' column.
+    These are titled on the csv as 'txtdetails-Customer' and 'txtdetails-unit_name'.
+
+    Args:
+        due_out_csv: The 'Due Out Report' csv file retrieved as a streamlit file_uploader object.
+
+    Returns:
+        A pandas dataframe with only the 'Name' column and 'Site leaving' column.
+    """
     due_out_df = pd.read_csv(
         due_out_csv, usecols=["txtdetails-Customer", "txtdetails-unit_name"]
     )
@@ -101,7 +134,25 @@ def get_due_out(due_out_csv):
     return due_out_df
 
 
-def get_who_is_staying(due_in, due_out):
+def get_who_is_staying(
+    due_in: streamlit.runtime.uploaded_file_manager.UploadedFile,
+    due_out: streamlit.runtime.uploaded_file_manager.UploadedFile,
+) -> pandas.core.frame.DataFrame:
+    """
+    Creates a pandas dataframe of which customers are staying.
+
+    Compares the 'Due Out Report' to the 'Due In Report' and merges the rows with the
+    same customer names to a new dataframe. The new dataframe has a 'Name' column of the
+    customer, a 'Site leaving' column with the site they are leaving from, and a 'Site arriving'
+    column with the new site they are moving to. It also sorts the dataframe by 'Site leaving'.
+
+    Args:
+        due_in: The 'Due In Report' csv file retrieved as a streamlit file_uploader object.
+        due_out: The 'Due Out Report' csv file retrieved as a streamlit file_uploader object.
+
+    Returns:
+        A merged pandas dataframe sorted by 'Site leaving' of the customers that are staying.
+    """
     due_in_df = get_due_in(due_in)
     due_out_df = get_due_out(due_out)
 
