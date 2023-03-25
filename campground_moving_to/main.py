@@ -5,7 +5,13 @@ import streamlit.runtime.uploaded_file_manager
 
 
 def main():
-    st.set_page_config(page_title="Campground Moving To", page_icon="⛺")
+    st.set_page_config(
+        page_title="Campground Moving To",
+        page_icon="⛺",
+        menu_items={
+            "About": "[GitHub Repository](https://github.com/HutsonJason/campground-moving-to)"
+        },
+    )
     st.title("⛺ Campground Moving To")
     with st.container():
         st.write("Upload the 'Due In Report.csv' and the 'Due Out Report.csv'.")
@@ -76,6 +82,14 @@ def main():
             st.error("⚠️ Too many files uploaded. Remove extras.")
     else:
         st.info("Please upload the Due In and Due Out Reports.")
+
+    with st.container():
+        st.markdown(
+            "[GitHub Repository](https://github.com/HutsonJason/campground-moving-to)"
+        )
+        st.markdown(
+            "[Information on file uploads](https://docs.streamlit.io/knowledge-base/using-streamlit/where-file-uploader-store-when-deleted)"
+        )
 
 
 def get_due_in(
