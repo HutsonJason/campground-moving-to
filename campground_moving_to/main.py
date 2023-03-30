@@ -39,6 +39,16 @@ def main():
             file_names_list.append(file_upload_list[i].name)
         # TODO Change the get status to accept tuple.
         get_file_status_message(file_names_list)
+        file_status_message = get_file_status_message(file_names_list)
+        match file_status_message[0]:
+            case "error":
+                st.error(file_status_message[1], icon="⚠️")
+            case "success":
+                st.success(file_status_message[1], icon="✔️")
+            case "info":
+                st.info(file_status_message[1], icon="ℹ️")
+            case _:
+                st.info(file_status_message[1], icon="ℹ️")
 
         # if len(file_upload_list) == 1:
         #     if file_upload_list[0].name == "Due In Report.csv":
@@ -197,8 +207,7 @@ def get_who_is_staying(
     due_in: streamlit.runtime.uploaded_file_manager.UploadedFile,
     due_out: streamlit.runtime.uploaded_file_manager.UploadedFile,
 ) -> pandas.core.frame.DataFrame:
-    """
-    Creates a pandas dataframe of which customers are staying.
+    """Creates a pandas dataframe of which customers are staying.
 
     Compares the 'Due Out Report' to the 'Due In Report' and merges the rows with the
     same customer names to a new dataframe. The new dataframe has a 'Name' column of the
@@ -226,6 +235,20 @@ def get_who_is_staying(
 
 
 def get_file_status_message(file_names_list: list[str]) -> tuple[str, str]:
+    """Gets the Streamlit message to display based on the uploaded files.
+
+    Uses the length of the file_names_list to determine how many files were uploaded with streamlit file uploader.
+    Runs a match case statement based on the number of files uploaded. The specific match it's looking for is 2.
+    In the case of 2, the valid/success check is 1 file named 'Due In Report.csv' and 1 'Due Out Report.csv'.
+    All other checks are for incorrect number of files and correct file names. A tuple is returned with a string
+    value of the streamlit message type to use (error, success, info), and the message to display.
+
+    Args:
+        file_names_list: A list of strings of the names of the files uploaded with streamlit file uploader.
+
+    Returns:
+        A tuple with the specific streamlit message type to use, and the message to display.
+    """
     match len(file_names_list):
         case 2:
             if file_names_list[0] == file_names_list[1]:
@@ -233,11 +256,6 @@ def get_file_status_message(file_names_list: list[str]) -> tuple[str, str]:
                     "error",
                     "Duplicate reports uploaded. Please upload 1 'Due In Report.csv' and 1 'Due Out Report.csv'",
                 )
-                # return st.error(
-                #     "Duplicate reports uploaded. Please upload 1 'Due In Report.csv' and 1 'Due Out Report.csv'",
-                #     icon="⚠️",
-                # )
-
             for i in range(2):
                 if not (
                     file_names_list[i] == "Due In Report.csv"
@@ -247,40 +265,22 @@ def get_file_status_message(file_names_list: list[str]) -> tuple[str, str]:
                         "error",
                         "Please only upload 'Due In Report.csv' or 'Due Out Report.csv'.",
                     )
-                    # return st.error(
-                    #     "Please only upload 'Due In Report.csv' or 'Due Out Report.csv'.",
-                    #     icon="⚠️",
-                    # )
-
             return "success", "Found the correct files!"
-            # return st.success("Found the correct files!", icon="✔️")
         case 1:
             match file_names_list[0]:
                 case "Due In Report.csv":
                     return "error", "'Due Out Report.csv' needs to be uploaded too."
-                    # return st.error(
-                    #     "'Due Out Report.csv' needs to be uploaded too.", icon="⚠️"
-                    # )
                 case "Due Out Report.csv":
                     return "error", "'Due In Report.csv' needs to be uploaded too."
-                    # return st.error(
-                    #     "'Due In Report.csv' needs to be uploaded too.", icon="⚠️"
-                    # )
                 case _:
                     return (
                         "error",
                         "Please only upload 'Due In Report.csv' or 'Due Out Report.csv'.",
                     )
-                    # return st.error(
-                    #     "Please only upload 'Due In Report.csv' or 'Due Out Report.csv'.",
-                    #     icon="⚠️",
-                    # )
         case _ if len(file_names_list) > 2:
             return "error", "Too many files uploaded. Remove extras."
-            # return st.error("Too many files uploaded. Remove extras.", icon="⚠️")
         case _:
             return "info", "Please upload the Due In and Due Out Reports."
-            # return st.info("Please upload the Due In and Due Out Reports.", icon="ℹ️")
 
 
 if __name__ == "__main__":
