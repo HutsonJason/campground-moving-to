@@ -50,45 +50,17 @@ def main():
                 st.info(file_status_message[1], icon="ℹ️")
 
         if correct_files(file_names_list):
-            ...
+            if file_upload_list[0].name == "Due In Report.csv":
+                due_in_df = get_due_in(file_upload_list[0])
+                due_out_df = get_due_out(file_upload_list[1])
+            else:
+                due_in_df = get_due_in(file_upload_list[1])
+                due_out_df = get_due_out(file_upload_list[0])
 
-        match len(file_upload_list):
-            case 2:
-                if file_upload_list[0].name == file_upload_list[1].name:
-                    ...
+            combined_df = get_who_is_staying(due_in_df, due_out_df)
+            with st.container():
+                st.dataframe(data=combined_df, use_container_width=True)
 
-                for i in range(2):
-                    if not (
-                        file_upload_list[i].name == "Due In Report.csv"
-                        or file_upload_list[i].name == "Due Out Report.csv"
-                    ):
-                        ...
-
-                due_in_report = ""
-                due_out_report = ""
-                if file_upload_list[0].name == "Due In Report.csv":
-                    due_in_report = file_upload_list[0]
-                    due_out_report = file_upload_list[1]
-                elif file_upload_list[1].name == "Due In Report.csv":
-                    due_in_report = file_upload_list[1]
-                    due_out_report = file_upload_list[0]
-
-                # st.success("Found the correct files!")
-                combined_df = get_who_is_staying(due_in_report, due_out_report)
-                with st.container():
-                    st.dataframe(data=combined_df, use_container_width=True)
-            case 1:
-                match file_upload_list[0]:
-                    case "Due In Report.csv":
-                        ...
-                    case "Due Out Report.csv":
-                        ...
-                    case _:
-                        ...
-            case _ if len(file_upload_list) > 2:
-                ...
-            case _:
-                ...
     else:
         st.info("Please upload the Due In and Due Out Reports.", icon="ℹ️")
 
@@ -121,14 +93,12 @@ def get_due_in(
         due_in_csv,
         usecols=["txtdetailssmallfont-Name", "txtdetailssmallfont-unit_name"],
     )
-    due_in_df.rename(
+    return due_in_df.rename(
         columns={
             "txtdetailssmallfont-Name": "Name",
             "txtdetailssmallfont-unit_name": "Site arriving",
         },
-        inplace=True,
     )
-    return due_in_df
 
 
 def get_due_out(
@@ -150,16 +120,14 @@ def get_due_out(
     due_out_df = pd.read_csv(
         due_out_csv, usecols=["txtdetails-Customer", "txtdetails-unit_name"]
     )
-    due_out_df.rename(
-        columns={"txtdetails-Customer": "Name", "txtdetails-unit_name": "Site leaving"},
-        inplace=True,
+    return due_out_df.rename(
+        columns={"txtdetails-Customer": "Name", "txtdetails-unit_name": "Site leaving"}
     )
-    return due_out_df
 
 
 def get_who_is_staying(
-    due_in: streamlit.runtime.uploaded_file_manager.UploadedFile,
-    due_out: streamlit.runtime.uploaded_file_manager.UploadedFile,
+    due_in_df: pandas.core.frame.DataFrame,
+    due_out_df: pandas.core.frame.DataFrame,
 ) -> pandas.core.frame.DataFrame:
     """Creates a pandas dataframe of which customers are staying.
 
@@ -169,23 +137,17 @@ def get_who_is_staying(
     column with the new site they are moving to. It also sorts the dataframe by 'Site leaving'.
 
     Args:
-        due_in: The 'Due In Report' csv file retrieved as a streamlit file_uploader object.
-        due_out: The 'Due Out Report' csv file retrieved as a streamlit file_uploader object.
+        due_in_df: The 'Due In Report' pandas dataframe.
+        due_out_df: The 'Due Out Report' pandas dataframe.
 
     Returns:
         A merged pandas dataframe sorted by 'Site leaving' of the customers that are staying.
     """
-    due_in_df = get_due_in(due_in)
-    due_out_df = get_due_out(due_out)
-
     return (
         pd.merge(due_out_df, due_in_df, on=["Name"], how="inner")
         .sort_values(by=["Site leaving"])
         .set_index("Name")
     )
-
-    # def check_file_state(file_upload_list):
-    ...
 
 
 def get_file_status_message(file_names_list: list[str]) -> tuple[str, str]:
