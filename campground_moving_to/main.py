@@ -37,7 +37,6 @@ def main():
         file_names_list = []
         for i in range(len(file_upload_list)):
             file_names_list.append(file_upload_list[i].name)
-        # TODO Change the get status to accept tuple.
         get_file_status_message(file_names_list)
         file_status_message = get_file_status_message(file_names_list)
         match file_status_message[0]:
@@ -50,53 +49,8 @@ def main():
             case _:
                 st.info(file_status_message[1], icon="ℹ️")
 
-        # if len(file_upload_list) == 1:
-        #     if file_upload_list[0].name == "Due In Report.csv":
-        #         st.error("⚠️ 'Due Out Report.csv' needs to be uploaded too.")
-        #     elif file_upload_list[0].name == "Due Out Report.csv":
-        #         st.error("⚠️ 'Due In Report.csv' needs to be uploaded too.")
-        #     else:
-        #         st.error(
-        #             "⚠️ Please only upload 'Due In Report.csv' or 'Due Out Report.csv'."
-        #         )
-        # elif len(file_upload_list) == 2:
-        #     if file_upload_list[0].name == file_upload_list[1].name:
-        #         st.error(
-        #             "⚠️ Duplicate reports uploaded. Please upload 1 'Due In Report.csv' and 1 'Due Out Report.csv'"
-        #         )
-        #     for i in range(2):
-        #         if (
-        #             file_upload_list[i].name == "Due In Report.csv"
-        #             or file_upload_list[i].name == "Due Out Report.csv"
-        #         ):
-        #             pass
-        #         else:
-        #             st.error(
-        #                 "⚠️ Please only upload 'Due In Report.csv' or 'Due Out Report.csv'."
-        #             )
-        #     if (
-        #         file_upload_list[0].name == "Due In Report.csv"
-        #         and file_upload_list[1].name == "Due Out Report.csv"
-        #     ):
-        #         st.success("Found the correct files!")
-        #         due_in_report = file_upload_list[0]
-        #         due_out_report = file_upload_list[1]
-        #         combined_df = get_who_is_staying(due_in_report, due_out_report)
-        #         with st.container():
-        #             st.dataframe(data=combined_df, use_container_width=True)
-        #
-        #     elif (
-        #         file_upload_list[0].name == "Due Out Report.csv"
-        #         and file_upload_list[1].name == "Due In Report.csv"
-        #     ):
-        #         st.success("Found the correct files!")
-        #         due_in_report = file_upload_list[1]
-        #         due_out_report = file_upload_list[0]
-        #         combined_df = get_who_is_staying(due_in_report, due_out_report)
-        #         with st.container():
-        #             st.dataframe(data=combined_df, use_container_width=True)
-        # elif len(file_upload_list) > 2:
-        #     st.error("⚠️ Too many files uploaded. Remove extras.")
+        if correct_files(file_names_list):
+            ...
 
         match len(file_upload_list):
             case 2:
@@ -281,6 +235,37 @@ def get_file_status_message(file_names_list: list[str]) -> tuple[str, str]:
             return "error", "Too many files uploaded. Remove extras."
         case _:
             return "info", "Please upload the Due In and Due Out Reports."
+
+
+def correct_files(file_names_list: list[str]) -> bool:
+    """Checks if the correct files were uploaded.
+
+    Checks the file names in the list to determine if the correct files were uploaded.
+    It's only looking for 2 files, so the first check is to ensure that there are only 2.
+    The next check is to ensure that the correct file names were uploaded ('Due In Report.csv'
+    and 'Due Out Report.csv')
+
+    Args:
+        file_names_list: A list of strings of the names of the files uploaded with streamlit file uploader.
+
+    Returns:
+        A boolean (True) if correct files found, (False) if not.
+    """
+    if len(file_names_list) == 2:
+        if (
+            file_names_list[0] == "Due In Report.csv"
+            and file_names_list[1] == "Due Out Report.csv"
+        ):
+            return True
+        elif (
+            file_names_list[0] == "Due Out Report.csv"
+            and file_names_list[1] == "Due In Report.csv"
+        ):
+            return True
+        else:
+            return False
+    else:
+        return False
 
 
 if __name__ == "__main__":

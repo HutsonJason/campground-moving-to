@@ -1,4 +1,4 @@
-from campground_moving_to.main import get_file_status_message
+from campground_moving_to.main import correct_files, get_file_status_message
 
 
 class TestGetFileStatusMessage:
@@ -80,3 +80,18 @@ class TestGetFileStatusMessage:
             "error",
             "Too many files uploaded. Remove extras.",
         )
+
+
+def test_correct_files():
+    file_names_list = ["Due In Report.csv", "Due Out Report.csv"]
+    assert correct_files(file_names_list)
+    file_names_list = ["Due Out Report.csv", "Due In Report.csv"]
+    assert correct_files(file_names_list)
+    file_names_list = ["Due In Report.csv", "Due In Report.csv"]
+    assert not correct_files(file_names_list)
+    file_names_list = ["Wrong file.csv", "Due In Report.csv"]
+    assert not correct_files(file_names_list)
+    file_names_list = ["Due In Report.csv"]
+    assert not correct_files(file_names_list)
+    file_names_list = ["Due In Report.csv", "Due Out Report.csv", "Extra file.csv"]
+    assert not correct_files(file_names_list)
