@@ -1,4 +1,15 @@
-from campground_moving_to.main import correct_files, get_file_status_message
+from io import BytesIO
+
+import pandas as pd
+import pytest
+from streamlit.runtime.uploaded_file_manager import UploadedFile, UploadedFileRec
+
+from campground_moving_to.main import (
+    correct_files,
+    get_due_in,
+    get_due_out,
+    get_file_status_message,
+)
 
 
 class TestGetFileStatusMessage:
@@ -95,3 +106,73 @@ def test_correct_files():
     assert not correct_files(file_names_list)
     file_names_list = ["Due In Report.csv", "Due Out Report.csv", "Extra file.csv"]
     assert not correct_files(file_names_list)
+
+
+@pytest.fixture()
+def due_in_df():
+    return pd.DataFrame(
+        {
+            "txtdetailssmallfont-Name": [
+                "Michael Scott",
+                "Dwight Schrute",
+                "Jim Halpert",
+            ],
+            "txtdetailssmallfont-unit_name": [1, 2, 3],
+        }
+    )
+
+
+@pytest.fixture()
+def due_in_file(due_in_df):
+    due_in_buff = BytesIO()
+    due_in_df.to_csv(due_in_buff)
+    due_in_buff.seek(0)
+    due_in_file_rec = UploadedFileRec(
+        1, "Due In Report.csv", "csv", due_in_buff.getvalue()
+    )
+    return UploadedFile(due_in_file_rec)
+
+
+def test_get_due_in(due_in_df, due_in_file):
+    df = due_in_df.rename(
+        columns={
+            "txtdetailssmallfont-Name": "Name",
+            "txtdetailssmallfont-unit_name": "Site arriving",
+        },
+    )
+    assert df.equals(get_due_in(due_in_file))
+
+
+@pytest.fixture()
+def due_out_df():
+    return pd.DataFrame(
+        {
+            "txtdetails-Customer": [
+                "Pam Beesly",
+                "Stanley Hudson",
+                "Kevin Malone",
+            ],
+            "txtdetails-unit_name": [10, 11, 12],
+        }
+    )
+
+
+@pytest.fixture()
+def due_out_file(due_out_df):
+    due_out_buff = BytesIO()
+    due_out_df.to_csv(due_out_buff)
+    due_out_buff.seek(0)
+    due_out_file_rec = UploadedFileRec(
+        2, "Due Out Report.csv", "csv", due_out_buff.getvalue()
+    )
+    return UploadedFile(due_out_file_rec)
+
+
+def test_get_due_out(due_out_df, due_out_file):
+    df = due_out_df.rename(
+        columns={
+            "txtdetails-Customer": "Name",
+            "txtdetails-unit_name": "Site leaving",
+        },
+    )
+    assert df.equals(get_due_out(due_out_file))
