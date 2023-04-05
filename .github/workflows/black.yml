@@ -1,4 +1,4 @@
-name: Lint
+name: Run Black
 
 on: [pull_request]
 
